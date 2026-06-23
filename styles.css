@@ -708,34 +708,6 @@ header {
   margin-top: 0.5rem;
 }
 
-.ai-detect-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-top: 0.5rem;
-}
-
-.ai-detect-badge.ai-safe {
-  background: var(--success-glow);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.ai-detect-badge.ai-warning {
-  background: var(--warning-glow);
-  color: var(--warning);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.ai-detect-badge.ai-danger {
-  background: var(--danger-glow);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
 
 .suitability-badge.match-high {
   background: var(--success-glow);
