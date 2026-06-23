@@ -484,7 +484,7 @@ Analyze the following candidate's Resume against the provided Job Description (J
 Perform a comprehensive compatibility matching audit.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
-Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, interviewQuestions) into clean, encouraging, and highly professional Korean.
+Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, aiWritingDetector, interviewQuestions) into clean, encouraging, and highly professional Korean.
 
 JSON Schema:
 {
@@ -519,6 +519,10 @@ JSON Schema:
       "suggested": <string, recommended rewrite example>
     }
   ],
+  "aiWritingDetector": {
+    "score": <number 0-100 representing probability of AI writing>,
+    "analysis": <string, 2-3 sentences explaining stylistic traits, repetition, or structure markers in Korean>
+  },
   "interviewQuestions": [
     {
       "question": <string, highly specific behavioral interview question generated from the resume and JD gaps>,
@@ -648,19 +652,20 @@ function exportBulkResultsToCsv() {
   }
 
   // Construct CSV Header
-  let csvContent = "지원자 파일명,매칭 점수,적합 등급,한줄 적합 평,핵심 강점,부족 역량\n";
+  let csvContent = "지원자 파일명,매칭 점수,적합 등급,AI 작성 의심도,한줄 적합 평,핵심 강점,부족 역량\n";
 
   completedItems.forEach((item) => {
     const filename = item.file.name.replace(/,/g, " "); // Prevent CSV column split
     const score = item.result.matchScore || 0;
     const grade = item.result.matchGrade || "-";
+    const aiScore = item.result.aiWritingDetector ? `${item.result.aiWritingDetector.score}%` : "-";
     const fitTitle = (item.result.fitTitle || "-").replace(/,/g, " ").replace(/"/g, '""');
     
     // Strengths and Weaknesses joined by semicolon
     const strengths = (item.result.strengths || []).map(s => s.replace(/,/g, " ").replace(/"/g, '""')).join("; ");
     const weaknesses = (item.result.weaknesses || []).map(w => w.replace(/,/g, " ").replace(/"/g, '""')).join("; ");
 
-    csvContent += `"${filename}",${score},"${grade}","${fitTitle}","${strengths}","${weaknesses}"\n`;
+    csvContent += `"${filename}",${score},"${grade}","${aiScore}","${fitTitle}","${strengths}","${weaknesses}"\n`;
   });
 
   // Extract job name from JD first line or set default
@@ -900,7 +905,7 @@ Analyze the following candidate's Resume against the provided Job Description (J
 Perform a comprehensive compatibility matching audit.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
-Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, interviewQuestions) into clean, encouraging, and highly professional Korean.
+Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, aiWritingDetector, interviewQuestions) into clean, encouraging, and highly professional Korean.
 
 JSON Schema:
 {
@@ -935,6 +940,10 @@ JSON Schema:
       "suggested": <string, recommended rewrite example>
     }
   ],
+  "aiWritingDetector": {
+    "score": <number 0-100 representing probability of AI writing>,
+    "analysis": <string, 2-3 sentences explaining stylistic traits, repetition, or structure markers in Korean>
+  },
   "interviewQuestions": [
     {
       "question": <string, highly specific behavioral interview question generated from the resume and JD gaps>,
@@ -1174,6 +1183,35 @@ function renderResults(result) {
     improvementsList.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-dark);">이력서 수정 제안이 없습니다.</div>`;
   }
 
+  // Render AI Writing Detector
+  const aiBadge = document.getElementById("aiDetectBadge");
+  const aiCard = document.getElementById("aiDetectCard");
+  const aiText = document.getElementById("aiDetectAnalysisText");
+
+  if (aiBadge && aiCard && aiText) {
+    if (result.aiWritingDetector) {
+      const aiScore = result.aiWritingDetector.score ?? 0;
+      aiBadge.style.display = "inline-block";
+      aiBadge.innerText = `AI 작성 의심도: ${aiScore}%`;
+      
+      // Clear previous classes first
+      aiBadge.className = "ai-detect-badge";
+      if (aiScore < 40) {
+        aiBadge.classList.add("ai-safe");
+      } else if (aiScore < 75) {
+        aiBadge.classList.add("ai-warning");
+      } else {
+        aiBadge.classList.add("ai-danger");
+      }
+
+      aiCard.style.display = "block";
+      aiText.innerText = result.aiWritingDetector.analysis || "분석 의견이 제공되지 않았습니다.";
+    } else {
+      aiBadge.style.display = "none";
+      aiCard.style.display = "none";
+    }
+  }
+
   // Render Interview Questions (Accordion)
   const interviewQuestions = document.getElementById("interviewQuestions");
   interviewQuestions.innerHTML = "";
@@ -1273,6 +1311,10 @@ function runDemoAnalysis() {
           "suggested": "3명의 프론트엔드 개발자 간의 정기 코드 리뷰 시스템을 도입하고 컴포넌트 재사용성을 75%까지 끌어올려 개발 생산성을 2배 향상시켰습니다."
         }
       ],
+      "aiWritingDetector": {
+        "score": 15,
+        "analysis": "본 자기소개서는 구체적인 수치 지표와 개인의 독창적인 협업 과정이 잘 드러나 있어 AI 작성 패턴이 거의 발견되지 않은 안전한 서류입니다."
+      },
       "interviewQuestions": [
         {
           "question": "React 컴포넌트 성능 튜닝 시, 렌더링 성능을 개선하기 위해 활용한 최적화 전략과 성과를 구체적으로 말씀해 주세요.",
@@ -1320,6 +1362,10 @@ function runDemoAnalysis() {
           "suggested": "AWS EC2 인스턴스를 Auto Scaling 그룹으로 편제하고 Route53 로드밸런싱을 도입하여 동시 접속자 급증 시에도 서비스의 가용성 99.9%를 유지했습니다."
         }
       ],
+      "aiWritingDetector": {
+        "score": 45,
+        "analysis": "일부 문장에서 일관적인 명사형 종결이나 기계적인 서술 구조가 관찰되나, 전반적인 프로젝트 설계 설명의 상세성으로 보아 AI 대필보다는 참고 수준으로 의심됩니다."
+      },
       "interviewQuestions": [
         {
           "question": "데이터베이스 트래픽이 폭증할 때, 데이터 조회의 성능을 확보하기 위해 인덱스(Index) 설계 시 고려해야 할 중요한 기준은 무엇인가요?",
@@ -1357,6 +1403,10 @@ function runDemoAnalysis() {
           "suggested": "Instagram 매체 A/B 테스트 기반 소재 교체 작업을 리딩하여, 고객 획득 비용(CAC)을 30% 감축하고 신규 회원 가입 유전 환율을 기존 대비 4.2%p 증가시켰습니다."
         }
       ],
+      "aiWritingDetector": {
+        "score": 82,
+        "analysis": "지나치게 모호하고 보편적인 마케팅 문장으로만 구성되어 있고, 구체적인 성과나 에피소드가 없이 전형적인 생성형 AI(LLM)의 어조와 문체(예: '역량을 강화하였습니다', '기여할 것입니다')가 반복 검출되어 AI 작성 확률이 높습니다."
+      },
       "interviewQuestions": [
         {
           "question": "A/B 테스트를 설계할 때 가장 우선으로 두는 가설 설정 규칙과, 테스트 결과 도출 후 신뢰도를 판별했던 본인만의 마케팅 지표 공식은 무엇인가요?",
@@ -1390,6 +1440,10 @@ function runDemoAnalysis() {
           "suggested": "사용자 행동 추적(Amplitude) 데이터 기반 퍼널 분석을 통해 3단계 결제 플로우를 간소화하여 결제 과정 이탈률을 18%에서 6.5%로 대폭 개선했습니다."
         }
       ],
+      "aiWritingDetector": {
+        "score": 25,
+        "analysis": "사용자 여정 분석이나 Amplitude 활용 방안 등 실무적 디테일이 구체적으로 녹아있어 AI 대필 가능성이 극히 낮으며, 본인의 주도적 경험을 바탕으로 기술된 서류입니다."
+      },
       "interviewQuestions": [
         {
           "question": "한정된 자원 속에서 개발팀과 디자이너의 일정이 대립하는 상황이 발생할 때, 기획자로서 최종 요구사항 스펙과 우선순위를 어떤 기준으로 합의합니까?",
