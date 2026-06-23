@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 이력서 분석기</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow"></div>
+
+  <div id="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">AI</div>
+        <div class="logo-text">
+          <h1>AI 이력서 분석기</h1>
+          <p>AI-Powered Resume Analysis & Feedback</p>
+        </div>
+      </div>
+      <div class="config-bar">
+        <!-- Model Selection Dropdown -->
+        <div class="model-select-wrapper" title="분석에 사용할 AI 모델을 선택합니다. 특정 모델이 붐비면 다른 모델로 전환해 보세요.">
+          <select id="modelSelect" class="custom-select">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash (추천)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+          </select>
+        </div>
+        <div class="api-key-input-wrapper" title="API Key가 없어도 '데모 분석'을 통해 시뮬레이션 해볼 수 있습니다.">
+          <input type="password" id="apiKeyInput" placeholder="API Key 입력">
+          <span class="api-key-status missing" id="apiKeyStatus" onclick="toggleApiKeyVisibility()">●</span>
+        </div>
+        <button class="btn-icon" onclick="showApiKeyHelp()" title="API Key 획득 방법 도움말">❓</button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-grid">
+      <!-- Input Section (Left) -->
+      <section class="card">
+        <div class="card-title">
+          <span class="icon">📝</span>
+          <h2>이력서 & 채용 공고 입력</h2>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="mode-tabs">
+          <button class="tab-btn active" id="singleTab" onclick="switchMode('single')">개별 분석</button>
+          <button class="tab-btn" id="bulkTab" onclick="switchMode('bulk')">대량 분석 (ATS)</button>
+        </div>
+
+        <!-- Single Mode Content -->
+        <div id="singleModeContent">
+          <!-- Resume Input -->
+          <div class="input-group">
+            <div class="input-label">
+              <span>이력서 파일 업로드 또는 직접 입력</span>
+              <span class="meta">PDF 파일 지원</span>
+            </div>
+            <!-- Drag & Drop PDF Dropzone -->
+            <div class="dropzone" id="pdfDropzone">
+              <div class="dropzone-icon">📥</div>
+              <div class="dropzone-text">이곳에 이력서 <strong>PDF 파일을 드래그</strong>하거나 클릭해서 업로드하세요.</div>
+              <div class="dropzone-subtext">파일 크기 제한: 최대 10MB</div>
+              <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;">
+            </div>
+            <!-- PDF file active badge -->
+            <div class="file-badge" id="fileBadge">
+              <div class="file-badge-info">
+                <span>📄</span>
+                <span id="fileNameDisplay">resume.pdf</span>
+              </div>
+              <span class="file-badge-remove" onclick="clearUploadedFile()">✕</span>
+            </div>
+            
+            <textarea class="custom-textarea" id="resumeText" placeholder="PDF 파일에서 추출된 텍스트가 여기에 나타나거나, 직접 이력서 내용을 복사하여 붙여넣으세요."></textarea>
+          </div>
+        </div>
+
+        <!-- Bulk Mode Content -->
+        <div id="bulkModeContent" style="display: none;">
+          <!-- Bulk Resume Input -->
+          <div class="input-group">
+            <div class="input-label">
+              <span>여러 개의 이력서 파일 업로드</span>
+              <span class="meta">다중 PDF 지원</span>
+            </div>
+            <!-- Drag & Drop Multiple PDF Dropzone -->
+            <div class="dropzone" id="bulkPdfDropzone">
+              <div class="dropzone-icon">📥</div>
+              <div class="dropzone-text">이곳에 <strong>여러 개의 PDF 파일</strong>을 드래그하거나 클릭하여 업로드하세요.</div>
+              <div class="dropzone-subtext">파일 개수 제한 없음, 최대 10MB/파일</div>
+              <input type="file" id="bulkPdfFileInput" accept="application/pdf" multiple style="display: none;">
+            </div>
+
+            <!-- Bulk Progress Bar -->
+            <div class="bulk-progress-bar-wrapper" id="bulkProgressWrapper" style="display: none; margin-top: 1rem;">
+              <div class="bulk-progress-text">
+                <span>분석 진행도:</span>
+                <span id="bulkProgressText">0 / 0 완료 (0%)</span>
+              </div>
+              <div class="bulk-progress-track">
+                <div class="bulk-progress-fill" id="bulkProgressFill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- File Queue Table -->
+            <div class="bulk-queue-wrapper" id="bulkQueueWrapper" style="display: none; margin-top: 1.25rem;">
+              <div class="queue-header">
+                <span class="queue-count" id="queueCount">대기열: 0개 파일</span>
+                <button class="btn-clear-queue" onclick="clearBulkQueue()" title="대기열 비우기">전체 삭제</button>
+              </div>
+              <table class="bulk-table">
+                <thead>
+                  <tr>
+                    <th>파일명</th>
+                    <th>상태</th>
+                    <th>점수</th>
+                    <th>등급</th>
+                    <th>동작</th>
+                  </tr>
+                </thead>
+                <tbody id="bulkQueueList">
+                  <!-- JS dynamic render -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Job Description Input -->
+        <div class="input-group">
+          <div class="input-label">
+            <span>채용 공고 (직무 설명서 - JD) 입력</span>
+            <span class="meta">원하는 직무 정보를 입력하세요</span>
+          </div>
+          <textarea class="custom-textarea" id="jobText" placeholder="회사의 채용 공고나 담당 직무에 대한 설명(Job Description)을 입력하세요. 이력서와의 부합도를 분석합니다."></textarea>
+          
+          <!-- Quick Templates -->
+          <div class="templates-list">
+            <span style="font-size: 0.75rem; color: var(--text-dark); display: flex; align-items: center; margin-right: 0.25rem;">추천 템플릿:</span>
+            <button class="template-btn" onclick="applyTemplate('frontend')">프론트엔드 개발자</button>
+            <button class="template-btn" onclick="applyTemplate('backend')">백엔드 개발자</button>
+            <button class="template-btn" onclick="applyTemplate('marketing')">마케터</button>
+            <button class="template-btn" onclick="applyTemplate('pm')">기획자/PM</button>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-buttons" id="singleActionButtons">
+          <button class="btn-primary" id="analyzeBtn" onclick="runResumeAnalysis()">
+            <span>✨</span> AI 이력서 분석 시작
+          </button>
+          <button class="btn-secondary" id="demoBtn" onclick="runDemoAnalysis()" title="API Key 없이 모의 데이터로 기능을 테스트합니다.">
+            데모 분석
+          </button>
+        </div>
+
+        <div class="action-buttons" id="bulkActionButtons" style="display: none;">
+          <button class="btn-primary" id="bulkAnalyzeBtn" onclick="runBulkResumeAnalysis()">
+            <span>⚡</span> 대량 AI 분석 시작
+          </button>
+          <button class="btn-secondary" id="exportCsvBtn" onclick="exportBulkResultsToCsv()" title="분석 완료된 결과를 엑셀 파일로 저장합니다." disabled>
+            📥 엑셀(CSV) 다운로드
+          </button>
+        </div>
+
+        <!-- History Subsection -->
+        <div class="history-section" id="historySection" style="display: none;">
+          <div class="history-title">최근 분석 이력</div>
+          <div class="history-list" id="historyList">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Output Section (Right) -->
+      <section class="card" style="min-height: 500px; display: flex; flex-direction: column;">
+        <div class="card-title">
+          <span class="icon">📊</span>
+          <h2>AI 분석 결과 리포트</h2>
+        </div>
+
+        <!-- Loading State -->
+        <div class="analyzer-loader" id="loader">
+          <div class="spinner-ring"></div>
+          <div class="loader-text">
+            <h3>AI 분석을 진행하는 중입니다</h3>
+            <p>이력서의 내용과 요구 직무 간의 매칭 포인트를 비교하고 있습니다. 잠시만 기다려주세요...</p>
+          </div>
+        </div>
+
+        <!-- Placeholder (Initial State) -->
+        <div class="results-placeholder" id="placeholder">
+          <div class="results-placeholder-icon">🤖</div>
+          <h3>AI의 심층 분석이 대기 중입니다</h3>
+          <p>왼쪽 패널에 이력서와 채용 공고를 입력한 후 <strong>'AI 이력서 분석 시작'</strong> 버튼을 클릭하세요.</p>
+        </div>
+
+        <!-- Real Analysis Results Dashboard -->
+        <div class="results-content" id="resultsContent">
+          <!-- Summary Row (Gauge + Headline) -->
+          <div class="results-header-summary">
+            <div class="score-circle-wrapper">
+              <svg class="score-circle-svg" viewBox="0 0 120 120">
+                <defs>
+                  <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="var(--primary)" />
+                    <stop offset="100%" stop-color="var(--secondary)" />
+                  </linearGradient>
+                </defs>
+                <circle class="score-circle-bg" cx="60" cy="60" r="55"></circle>
+                <circle class="score-circle-fill" id="scoreCircleFill" cx="60" cy="60" r="55"></circle>
+              </svg>
+              <div class="score-text-overlay">
+                <div class="score-value" id="scoreValue">0</div>
+                <div class="score-unit">매칭 점수</div>
+              </div>
+            </div>
+            <div class="fit-headline">
+              <div class="suitability-badge" id="matchBadge">적합도 평가 중</div>
+              <h2 id="fitTitle">분석 로드 완료</h2>
+              <p class="fit-description" id="fitDescription">이력서와 채용 공고의 상세 핵심 평가 결과입니다.</p>
+            </div>
+          </div>
+
+          <!-- Competency Strengths Bars -->
+          <div class="competency-list" id="competencyList">
+            <!-- Template Item rendered dynamically -->
+          </div>
+
+          <!-- Pros and Cons Grid -->
+          <div class="pros-cons-grid">
+            <!-- Strengths Card -->
+            <div class="pro-con-card pros">
+              <div class="pro-con-title pro-title">
+                <span>✓</span> 강점 및 핵심 역량
+              </div>
+              <ul class="pro-con-list pros-list" id="strengthsList">
+                <!-- JS dynamic render -->
+              </ul>
+            </div>
+            <!-- Weaknesses Card -->
+            <div class="pro-con-card cons">
+              <div class="pro-con-title con-title">
+                <span>⚠</span> 보완 및 부족 항목
+              </div>
+              <ul class="pro-con-list cons-list" id="weaknessesList">
+                <!-- JS dynamic render -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- Improvement Suggestions -->
+          <div class="improvement-card">
+            <div class="improvement-title">
+              <span>💡</span> 이력서 개선 및 문맥 제안
+            </div>
+            <div class="improvement-list" id="improvementsList">
+              <!-- JS dynamic render -->
+            </div>
+          </div>
+
+          <!-- AI Predicted Interview Questions -->
+          <div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+              <span>💬</span> 직무 맞춤 AI 예상 면접 질문
+            </div>
+            <div class="interview-accordion" id="interviewQuestions">
+              <!-- Accordion Items dynamic render -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Element -->
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">i</span>
+    <span id="toastText">알림 메시지</span>
+  </div>
+
+  <!-- External scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
