@@ -479,9 +479,11 @@ async function runBulkResumeAnalysis() {
     renderBulkQueue();
 
     // Construct prompt
-    const prompt = `You are a professional recruiting manager and professional career coach.
-Analyze the following candidate's Resume against the provided Job Description (JD). 
-Perform a comprehensive compatibility matching audit.
+    const prompt = `You are a highly critical, strict, and professional recruiting manager.
+Analyze the following candidate's Resume against the provided Job Description (JD) very conservatively. 
+Perform a comprehensive and rigorous compatibility matching audit.
+
+Be extremely strict and conservative when scoring. The "matchScore" must reflect a realistic corporate screening standard. Apply heavy deductions if the candidate lacks required years of experience, direct keyword matches in the tech stack, or crucial responsibilities mentioned in the JD. An average candidate should get a score around 40-60, and scores above 80 should only be given to exceptional matches who meet all qualifications including optional/preferred ones.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
 Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, interviewQuestions) into clean, encouraging, and highly professional Korean.
@@ -884,9 +886,11 @@ async function runResumeAnalysis() {
   showLoader(true);
 
   // Construct prompt containing JSON schema instructions
-  const prompt = `You are a professional recruiting manager and professional career coach.
-Analyze the following candidate's Resume against the provided Job Description (JD). 
-Perform a comprehensive compatibility matching audit.
+  const prompt = `You are a highly critical, strict, and professional recruiting manager.
+Analyze the following candidate's Resume against the provided Job Description (JD) very conservatively. 
+Perform a comprehensive and rigorous compatibility matching audit.
+
+Be extremely strict and conservative when scoring. The "matchScore" must reflect a realistic corporate screening standard. Apply heavy deductions if the candidate lacks required years of experience, direct keyword matches in the tech stack, or crucial responsibilities mentioned in the JD. An average candidate should get a score around 40-60, and scores above 80 should only be given to exceptional matches who meet all qualifications including optional/preferred ones.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
 Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, interviewQuestions) into clean, encouraging, and highly professional Korean.
