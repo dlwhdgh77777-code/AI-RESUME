@@ -484,7 +484,7 @@ Analyze the following candidate's Resume against the provided Job Description (J
 Perform a comprehensive compatibility matching audit.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
-Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, interviewQuestions) into clean, encouraging, and highly professional Korean.
+Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, interviewQuestions) into clean, encouraging, and highly professional Korean.
 
 JSON Schema:
 {
@@ -507,18 +507,7 @@ JSON Schema:
     <string, gap/weakness 1>,
     <string, gap/weakness 2>
   ],
-  "improvements": [
-    {
-      "title": <string, item title to improve>,
-      "original": <string, a snippet or theme from the resume showing weak impact or poor expression>,
-      "suggested": <string, a concrete rewritten example with action verbs and quantifiable results>
-    },
-    {
-      "title": <string, item title to improve>,
-      "original": <string, another weak resume snippet>,
-      "suggested": <string, recommended rewrite example>
-    }
-  ],
+
   "interviewQuestions": [
     {
       "question": <string, highly specific behavioral interview question generated from the resume and JD gaps>,
@@ -900,7 +889,7 @@ Analyze the following candidate's Resume against the provided Job Description (J
 Perform a comprehensive compatibility matching audit.
 
 Output your results strictly in the specified JSON format. Your output must contain nothing other than the raw JSON itself, ensuring it is a valid JSON. Do not include markdown codeblocks or quotes.
-Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, improvements, interviewQuestions) into clean, encouraging, and highly professional Korean.
+Translate all analysis text (fitTitle, fitDescription, competencies, strengths, weaknesses, interviewQuestions) into clean, encouraging, and highly professional Korean.
 
 JSON Schema:
 {
@@ -922,18 +911,6 @@ JSON Schema:
   "weaknesses": [
     <string, gap/weakness 1>,
     <string, gap/weakness 2>
-  ],
-  "improvements": [
-    {
-      "title": <string, item title to improve>,
-      "original": <string, a snippet or theme from the resume showing weak impact or poor expression>,
-      "suggested": <string, a concrete rewritten example with action verbs and quantifiable results>
-    },
-    {
-      "title": <string, item title to improve>,
-      "original": <string, another weak resume snippet>,
-      "suggested": <string, recommended rewrite example>
-    }
   ],
   "interviewQuestions": [
     {
@@ -1115,16 +1092,11 @@ function renderResults(result) {
           <span class="competency-name">${comp.name}</span>
           <span class="competency-score">${comp.score}%</span>
         </div>
-        <div class="competency-bar-track">
-          <div class="competency-bar-fill" style="width: 0%;"></div>
+        <div class="competency-track">
+          <div class="competency-fill" style="width: ${comp.score}%"></div>
         </div>
       `;
       competencyList.appendChild(item);
-      
-      // Trigger bar animation shortly after DOM insertion
-      setTimeout(() => {
-        item.querySelector(".competency-bar-fill").style.width = `${comp.score}%`;
-      }, 100);
     });
   }
 
@@ -1137,8 +1109,6 @@ function renderResults(result) {
       li.innerText = str;
       strengthsList.appendChild(li);
     });
-  } else {
-    strengthsList.innerHTML = `<li>기술된 내용이 없습니다.</li>`;
   }
 
   // Render Weaknesses
@@ -1150,254 +1120,178 @@ function renderResults(result) {
       li.innerText = weak;
       weaknessesList.appendChild(li);
     });
-  } else {
-    weaknessesList.innerHTML = `<li>부족한 역량이 식별되지 않았습니다.</li>`;
   }
 
-  // Render Improvements
-  const improvementsList = document.getElementById("improvementsList");
-  improvementsList.innerHTML = "";
-  if (result.improvements && result.improvements.length > 0) {
-    result.improvements.forEach((imp) => {
-      const div = document.createElement("div");
-      div.className = "improvement-item";
-      div.innerHTML = `
-        <strong style="color: var(--text-main); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">🔧 ${imp.title}</strong>
-        <div class="improvement-before-after">
-          <div class="version-box original" title="기존 작성">이전: "${imp.original}"</div>
-          <div class="version-box suggested" title="AI 제안 작성">수정안: "${imp.suggested}"</div>
-        </div>
-      `;
-      improvementsList.appendChild(div);
-    });
-  } else {
-    improvementsList.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-dark);">이력서 수정 제안이 없습니다.</div>`;
-  }
-
-  // Render Interview Questions (Accordion)
+  // Render Interview Questions
   const interviewQuestions = document.getElementById("interviewQuestions");
   interviewQuestions.innerHTML = "";
   if (result.interviewQuestions && result.interviewQuestions.length > 0) {
     result.interviewQuestions.forEach((q, index) => {
-      const item = document.createElement("div");
-      item.className = "accordion-item";
-      item.innerHTML = `
+      const activeClass = index === 0 ? "active" : "";
+      const div = document.createElement("div");
+      div.className = `accordion-item ${activeClass}`;
+      div.innerHTML = `
         <div class="accordion-header" onclick="toggleAccordion(this)">
-          <span class="accordion-question">Q${index + 1}. ${q.question}</span>
+          <div class="accordion-header-title">Q${index + 1}. ${q.question}</div>
           <span class="accordion-icon">▼</span>
         </div>
         <div class="accordion-content">
-          <div class="accordion-content-inner">
-            <span class="accordion-meta-title">💡 면접 답변 가이드</span>
-            <p class="accordion-tip-text">${q.tip}</p>
-          </div>
+          <div class="interview-tip-title">💡 면접 대응 가이드 (Recruiter Tip)</div>
+          <p class="interview-tip">${q.tip}</p>
         </div>
       `;
-      interviewQuestions.appendChild(item);
+      interviewQuestions.appendChild(div);
     });
-  } else {
-    interviewQuestions.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-dark);">예상 면접 질문이 없습니다.</div>`;
-  }
-
-  // Scroll to results on smaller screens
-  if (window.innerWidth < 968) {
-    resultsContent.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
-// Accordion Toggle Logic
+// Toggle Interview Accordion
 function toggleAccordion(header) {
   const item = header.parentElement;
-  const content = header.nextElementSibling;
   const isActive = item.classList.contains("active");
-
-  // Close other accordions
-  document.querySelectorAll(".accordion-item").forEach((node) => {
-    node.classList.remove("active");
-    node.querySelector(".accordion-content").style.maxHeight = null;
+  
+  // Close all other items in this container
+  const parent = item.parentElement;
+  parent.querySelectorAll(".accordion-item").forEach((it) => {
+    it.classList.remove("active");
   });
-
+  
   if (!isActive) {
     item.classList.add("active");
-    content.style.maxHeight = content.scrollHeight + "px";
   }
 }
 
-// Demo Simulation Analysis Mode (Fully Client Side, no API key needed)
-function runDemoAnalysis() {
-  showLoader(true);
-  showToast("API Key 없이 데모 분석을 진행합니다 (모의 시나리오)...", "info");
+// Offline demoData (Removed improvements field)
+const demoData = {
+  "프론트엔드 개발자": {
+    "matchScore": 88,
+    "matchGrade": "HIGH",
+    "fitTitle": "프론트엔드 직무 우수 매칭",
+    "fitDescription": "핵심 기술인 React와 TypeScript 지식이 매우 뛰어나며 컴포넌트 설계 역량도 양호합니다. 다만 대규모 서비스 웹 성능 최적화(Lighthouse 지표 개선 등) 및 리팩토링 사례를 수치화하여 보강하면 완벽할 것입니다.",
+    "competencies": [
+      {"name": "React & JS 실무력", "score": 92},
+      {"name": "TypeScript 정밀성", "score": 85},
+      {"name": "웹성능 및 SEO 최적화", "score": 68},
+      {"name": "애자일 스프린트 협업", "score": 90}
+    ],
+    "strengths": [
+      "React 기반 다수의 상용 웹 서비스 기획부터 배포까지 리딩한 경험 보유",
+      "TypeScript를 적용하여 런타임 오류율 40% 이상 감소시킨 아키텍처 역량",
+      "Figma 설계 요구사항을 모듈형 컴포넌트로 완벽하게 구현하는 뛰어난 UI 마크업 기술"
+    ],
+    "weaknesses": [
+      "Lighthouse, Core Web Vitals 측정 기준 성능 개선을 주도했으나 구체적인 수치가 기재되지 않음",
+      "React Hooks 렌더링 최적화(useMemo, useCallback 등) 기법 적용의 뚜렷한 증빙 부재"
+    ],
+    "interviewQuestions": [
+      {
+        "question": "React 컴포넌트 성능 튜닝 시, 렌더링 성능을 개선하기 위해 활용한 최적화 전략과 성과를 구체적으로 말씀해 주세요.",
+        "tip": "useMemo, React.memo의 오남용으로 인한 역효과 예방 지식을 언급하며, 프로파일러 툴을 통해 병목을 감지했던 흐름으로 대답하세요."
+      },
+      {
+        "question": "TypeScript 도입 과정에서 기존 자바스크립트 레거시 코드를 리팩토링할 때 가장 어려웠던 타입 정의 이슈와 극복 사례를 설명해 주세요.",
+        "tip": "타입 단언(as)을 피하고 Generic을 활용해 코드 안정성을 높인 경험을 중점으로 설명하세요."
+      },
+      {
+        "question": "팀 프로젝트 수행 중 개발 일정 지연이 발생할 때, 타 부서(디자이너/PM)와 우선순위를 조율한 실제 경험이 있으신가요?",
+        "tip": "갈등 극복 과정에서 사용한 MVP 중심의 릴리즈 전략 및 적극적인 커뮤니케이션 능력을 입증해야 합니다."
+      }
+    ]
+  },
+  "백엔드 개발자": {
+    "matchScore": 84,
+    "matchGrade": "HIGH",
+    "fitTitle": "백엔드 개발 직무 상위 적합",
+    "fitDescription": "Java/Spring 아키텍처 및 RESTful API 설계 역량이 탄탄하며 RDBMS 최적화 지식도 좋습니다. AWS 환경 인프라 구축 경험도 유의미하나 Redis 캐싱이나 배포 자동화(CI/CD) 성과 수치를 강조하면 채용 성사율이 높아집니다.",
+    "competencies": [
+      {"name": "API 아키텍처 설계", "score": 90},
+      {"name": "DBMS 쿼리 튜닝", "score": 83},
+      {"name": "AWS 클라우드 인프라", "score": 80},
+      {"name": "서버 성능 튜닝", "score": 70}
+    ],
+    "strengths": [
+      "Spring Boot 환경의 대용량 실시간 결제 API 모듈을 설계하여 무장애 서비스 운영",
+      "정규화 및 Index 튜닝을 통해 대규모 DB 트래픽 환경 속 Slow Query 속도를 50% 개선",
+      "클라우드 가상 시스템 환경(AWS EC2, RDS, S3) 구축 및 운영 숙련"
+    ],
+    "weaknesses": [
+      "CI/CD 빌드 배포 배관 설계 및 Docker 컨테이너 오케스트레이션 구체적 실무력 미비",
+      "Redis 캐싱이나 MSA 관련 개념의 적용 유무가 모호하게 서술됨"
+    ],
+    "interviewQuestions": [
+      {
+        "question": "데이터베이스 트래픽이 폭증할 때, 데이터 조회의 성능을 확보하기 위해 인덱스(Index) 설계 시 고려해야 할 중요한 기준은 무엇인가요?",
+        "tip": "카디널리티(Cardinality)가 높은 열을 우선순위로 두고 복합 인덱스 사용 시 컬럼의 순서 규칙을 명확하게 답하는 것이 핵심입니다."
+      },
+      {
+        "question": "분산 환경에서 발생할 수 있는 데이터 정합성 이슈를 Spring Boot 단에서 트랜잭션 전파 수준 설정을 포함해 극복한 사례가 있나요?",
+        "tip": "@Transactional 옵션 활용법과 동시성 제어(낙관적/비관적 락) 기법을 연계하여 현업 실력을 보여주세요."
+      }
+    ]
+  },
+  "퍼포먼스 마케터": {
+    "matchScore": 76,
+    "matchGrade": "MID",
+    "fitTitle": "마케팅 역량 부합 (보완 필요)",
+    "fitDescription": "디지털 채널 광고 집행 능력과 콘텐츠 기획 경험은 있으나, 퍼포먼스 마케팅의 핵심인 데이터 시각화(GA4, Tableau)와 전환 단가(CAC) 최적화에 대한 구체적인 데이터 표현이 부족합니다.",
+    "competencies": [
+      {"name": "매체 광고 집행력", "score": 85},
+      {"name": "데이터 분석 및 시각화", "score": 62},
+      {"name": "A/B 테스트 및 지표 기획", "score": 70},
+      {"name": "카피라이팅/콘텐츠 기획", "score": 80}
+    ],
+    "strengths": [
+      "Meta 및 Google Ads 등 다양한 유료 매체를 활용한 월 2,000만원 규모의 광고 기획/집행",
+      "소비자 트렌드를 겨냥한 영상 콘텐츠 카피라이팅 기획 능력이 탁월"
+    ],
+    "weaknesses": [
+      "ROAS(광고비 대비 매출액) 지표 개선과 LTV(고객생애가치) 향상을 위한 심도 있는 가설 테스트 구체성 결여",
+      "GA4 등을 통한 오가닉 트래픽 유입 분석 역량 명시가 부족함"
+    ],
+    "interviewQuestions": [
+      {
+        "question": "A/B 테스트를 설계할 때 가장 우선으로 두는 가설 설정 규칙과, 테스트 결과 도출 후 신뢰도를 판별했던 본인만의 마케팅 지표 공식은 무엇인가요?",
+        "tip": "귀무가설과 대립가설의 구분, 통계적 유의 수준(p-value) 확인 등의 개념을 가볍게 섞어 과학적으로 접근하고 있음을 보여주세요."
+      }
+    ]
+  },
+  "프로덕트 매니저(PM)": {
+    "matchScore": 81,
+    "matchGrade": "MID",
+    "fitTitle": "PM/기획 직무 적격자",
+    "fitDescription": "고객 관점의 사용자 스토리(User Story) 작성 및 와이어프레임 설계 능력은 준수하며 개발자와의 소통 역량도 우수합니다. 애자일 스크럼 문화를 주도하여 병목 현상을 해소하고 제품 출시 일정을 달성했던 구체적인 수치 지표를 강화할 것을 권장합니다.",
+    "competencies": [
+      {"name": "서비스 기획 및 로드맵", "score": 88},
+      {"name": "UI/UX 설계 및 Figma", "score": 82},
+      {"name": "애자일/스크럼 운영력", "score": 75},
+      {"name": "정량 지표 측정 능력", "score": 70}
+    ],
+    "strengths": [
+      "피그마 기반의 고도화된 UI 와이어프레임 작성 및 개발 전달 가이드라인 수립 우수",
+      "사용자 불만 데이터를 심층 분석하여 신규 회원 유입 동선의 이탈 지점을 개선한 경험"
+    ],
+    "weaknesses": [
+      "애자일 프로세스에서 주요 릴리즈 배포 주기 단축이나 병목 해소 기여 실적 수치 미흡",
+      "API 구조 정의나 시스템 흐름에 대한 기술적 이해도 언급 부재"
+    ],
+    "interviewQuestions": [
+      {
+        "question": "한정된 자원 속에서 개발팀과 디자이너의 일정이 대립하는 상황이 발생할 때, 기획자로서 최종 요구사항 스펙과 우선순위를 어떤 기준으로 합의합니까?",
+        "tip": "MoSCoW 우선순위 기법을 언급하고 사용자 가치 및 비즈니스 임팩트를 측정할 수 있는 데이터 수치를 제안하여 협조를 이끌어 낸다고 답하세요."
+      }
+    ]
+  }
+};
 
-  // Determine role based on active template, or default to Frontend
+// Run offline mock analysis using demoData
+function runDemoAnalysis() {
+  const activeBtn = document.querySelector(".template-btn.active");
   let role = "프론트엔드 개발자";
-  const jobValue = document.getElementById("jobText").value;
-  if (jobValue.includes("백엔드")) {
-    role = "백엔드 개발자";
-  } else if (jobValue.includes("마케터")) {
-    role = "퍼포먼스 마케터";
-  } else if (jobValue.includes("기획자")) {
-    role = "프로덕트 매니저(PM)";
+  if (activeBtn) {
+    role = activeBtn.innerText.trim();
   }
 
-  // Mock Analysis Database
-  const demoData = {
-    "프론트엔드 개발자": {
-      "matchScore": 88,
-      "matchGrade": "HIGH",
-      "fitTitle": "프론트엔드 직무 우수 매칭",
-      "fitDescription": "핵심 기술인 React와 TypeScript 지식이 매우 뛰어나며 컴포넌트 설계 역량도 양호합니다. 다만 대규모 서비스 웹 성능 최적화(Lighthouse 지표 개선 등) 및 리팩토링 사례를 수치화하여 보강하면 완벽할 것입니다.",
-      "competencies": [
-        {"name": "React & JS 실무력", "score": 92},
-        {"name": "TypeScript 정밀성", "score": 85},
-        {"name": "웹성능 및 SEO 최적화", "score": 68},
-        {"name": "애자일 스프린트 협업", "score": 90}
-      ],
-      "strengths": [
-        "React 기반 다수의 상용 웹 서비스 기획부터 배포까지 리딩한 경험 보유",
-        "TypeScript를 적용하여 런타임 오류율 40% 이상 감소시킨 아키텍처 역량",
-        "Figma 설계 요구사항을 모듈형 컴포넌트로 완벽하게 구현하는 뛰어난 UI 마크업 기술"
-      ],
-      "weaknesses": [
-        "Lighthouse, Core Web Vitals 측정 기준 성능 개선을 주도했으나 구체적인 수치가 기재되지 않음",
-        "React Hooks 렌더링 최적화(useMemo, useCallback 등) 기법 적용의 뚜렷한 증빙 부재"
-      ],
-      "improvements": [
-        {
-          "title": "성능 개선 프로젝트 수치화",
-          "original": "사내 제품 메인 페이지 로딩 속도를 많이 최적화했습니다.",
-          "suggested": "메인 번들 크기 경량화 및 코드 분할(Code Splitting)을 통해 웹 로딩 속도를 LCP 기준 3.2초에서 1.8초로 43% 단축시켰습니다."
-        },
-        {
-          "title": "협업 규모 및 성과 구체화",
-          "original": "동료 개발자들과 사이드 리팩토링을 진행했습니다.",
-          "suggested": "3명의 프론트엔드 개발자 간의 정기 코드 리뷰 시스템을 도입하고 컴포넌트 재사용성을 75%까지 끌어올려 개발 생산성을 2배 향상시켰습니다."
-        }
-      ],
-      "interviewQuestions": [
-        {
-          "question": "React 컴포넌트 성능 튜닝 시, 렌더링 성능을 개선하기 위해 활용한 최적화 전략과 성과를 구체적으로 말씀해 주세요.",
-          "tip": "useMemo, React.memo의 오남용으로 인한 역효과 예방 지식을 언급하며, 프로파일러 툴을 통해 병목을 감지했던 흐름으로 대답하세요."
-        },
-        {
-          "question": "TypeScript 도입 과정에서 기존 자바스크립트 레거시 코드를 리팩토링할 때 가장 어려웠던 타입 정의 이슈와 극복 사례를 설명해 주세요.",
-          "tip": "타입 단언(as)을 피하고 Generic을 활용해 코드 안정성을 높인 경험을 중점으로 설명하세요."
-        },
-        {
-          "question": "팀 프로젝트 수행 중 개발 일정 지연이 발생할 때, 타 부서(디자이너/PM)와 우선순위를 조율한 실제 경험이 있으신가요?",
-          "tip": "갈등 극복 과정에서 사용한 MVP 중심의 릴리즈 전략 및 적극적인 커뮤니케이션 능력을 입증해야 합니다."
-        }
-      ]
-    },
-    "백엔드 개발자": {
-      "matchScore": 84,
-      "matchGrade": "HIGH",
-      "fitTitle": "백엔드 개발 직무 상위 적합",
-      "fitDescription": "Java/Spring 아키텍처 및 RESTful API 설계 역량이 탄탄하며 RDBMS 최적화 지식도 좋습니다. AWS 환경 인프라 구축 경험도 유의미하나 Redis 캐싱이나 배포 자동화(CI/CD) 성과 수치를 강조하면 채용 성사율이 높아집니다.",
-      "competencies": [
-        {"name": "API 아키텍처 설계", "score": 90},
-        {"name": "DBMS 쿼리 튜닝", "score": 83},
-        {"name": "AWS 클라우드 인프라", "score": 80},
-        {"name": "서버 성능 튜닝", "score": 70}
-      ],
-      "strengths": [
-        "Spring Boot 환경의 대용량 실시간 결제 API 모듈을 설계하여 무장애 서비스 운영",
-        "정규화 및 Index 튜닝을 통해 대규모 DB 트래픽 환경 속 Slow Query 속도를 50% 개선",
-        "클라우드 가상 시스템 환경(AWS EC2, RDS, S3) 구축 및 운영 숙련"
-      ],
-      "weaknesses": [
-        "CI/CD 빌드 배포 배관 설계 및 Docker 컨테이너 오케스트레이션 구체적 실무력 미비",
-        "Redis 캐싱이나 MSA 관련 개념의 적용 유무가 모호하게 서술됨"
-      ],
-      "improvements": [
-        {
-          "title": "데이터베이스 최적화 수치화",
-          "original": "조회 쿼리 튜닝 작업을 통해 속도를 향상했습니다.",
-          "suggested": "적절한 인덱스 재구성 및 커버링 인덱스 도입으로 평균 쿼리 응답 시간을 1,200ms에서 120ms로 90% 대폭 줄였습니다."
-        },
-        {
-          "title": "AWS 아키텍처 활용 부각",
-          "original": "AWS 환경에 서버를 구축하고 모니터링했습니다.",
-          "suggested": "AWS EC2 인스턴스를 Auto Scaling 그룹으로 편제하고 Route53 로드밸런싱을 도입하여 동시 접속자 급증 시에도 서비스의 가용성 99.9%를 유지했습니다."
-        }
-      ],
-      "interviewQuestions": [
-        {
-          "question": "데이터베이스 트래픽이 폭증할 때, 데이터 조회의 성능을 확보하기 위해 인덱스(Index) 설계 시 고려해야 할 중요한 기준은 무엇인가요?",
-          "tip": "카디널리티(Cardinality)가 높은 열을 우선순위로 두고 복합 인덱스 사용 시 컬럼의 순서 규칙을 명확하게 답하는 것이 핵심입니다."
-        },
-        {
-          "question": "분산 환경에서 발생할 수 있는 데이터 정합성 이슈를 Spring Boot 단에서 트랜잭션 전파 수준 설정을 포함해 극복한 사례가 있나요?",
-          "tip": "@Transactional 옵션 활용법과 동시성 제어(낙관적/비관적 락) 기법을 연계하여 현업 실력을 보여주세요."
-        }
-      ]
-    },
-    "퍼포먼스 마케터": {
-      "matchScore": 76,
-      "matchGrade": "MID",
-      "fitTitle": "마케팅 역량 부합 (보완 필요)",
-      "fitDescription": "디지털 채널 광고 집행 능력과 콘텐츠 기획 경험은 있으나, 퍼포먼스 마케팅의 핵심인 데이터 시각화(GA4, Tableau)와 전환 단가(CAC) 최적화에 대한 구체적인 데이터 표현이 부족합니다.",
-      "competencies": [
-        {"name": "매체 광고 집행력", "score": 85},
-        {"name": "데이터 분석 및 시각화", "score": 62},
-        {"name": "A/B 테스트 및 지표 기획", "score": 70},
-        {"name": "카피라이팅/콘텐츠 기획", "score": 80}
-      ],
-      "strengths": [
-        "Meta 및 Google Ads 등 다양한 유료 매체를 활용한 월 2,000만원 규모의 광고 기획/집행",
-        "소비자 트렌드를 겨냥한 영상 콘텐츠 카피라이팅 기획 능력이 탁월"
-      ],
-      "weaknesses": [
-        "ROAS(광고비 대비 매출액) 지표 개선과 LTV(고객생애가치) 향상을 위한 심도 있는 가설 테스트 구체성 결여",
-        "GA4 등을 통한 오가닉 트래픽 유입 분석 역량 명시가 부족함"
-      ],
-      "improvements": [
-        {
-          "title": "광고 효율 개선 지표 명시",
-          "original": "SNS 광고를 통해 쇼핑몰 유입 고객을 늘렸습니다.",
-          "suggested": "Instagram 매체 A/B 테스트 기반 소재 교체 작업을 리딩하여, 고객 획득 비용(CAC)을 30% 감축하고 신규 회원 가입 유전 환율을 기존 대비 4.2%p 증가시켰습니다."
-        }
-      ],
-      "interviewQuestions": [
-        {
-          "question": "A/B 테스트를 설계할 때 가장 우선으로 두는 가설 설정 규칙과, 테스트 결과 도출 후 신뢰도를 판별했던 본인만의 마케팅 지표 공식은 무엇인가요?",
-          "tip": "귀무가설과 대립가설의 구분, 통계적 유의 수준(p-value) 확인 등의 개념을 가볍게 섞어 과학적으로 접근하고 있음을 보여주세요."
-        }
-      ]
-    },
-    "프로덕트 매니저(PM)": {
-      "matchScore": 81,
-      "matchGrade": "MID",
-      "fitTitle": "PM/기획 직무 적격자",
-      "fitDescription": "고객 관점의 사용자 스토리(User Story) 작성 및 와이어프레임 설계 능력은 준수하며 개발자와의 소통 역량도 우수합니다. 애자일 스크럼 문화를 주도하여 병목 현상을 해소하고 제품 출시 일정을 달성했던 구체적인 수치 지표를 강화할 것을 권장합니다.",
-      "competencies": [
-        {"name": "서비스 기획 및 로드맵", "score": 88},
-        {"name": "UI/UX 설계 및 Figma", "score": 82},
-        {"name": "애자일/스크럼 운영력", "score": 75},
-        {"name": "정량 지표 측정 능력", "score": 70}
-      ],
-      "strengths": [
-        "피그마 기반의 고도화된 UI 와이어프레임 작성 및 개발 전달 가이드라인 수립 우수",
-        "사용자 불만 데이터를 심층 분석하여 신규 회원 유입 동선의 이탈 지점을 개선한 경험"
-      ],
-      "weaknesses": [
-        "애자일 프로세스에서 주요 릴리즈 배포 주기 단축이나 병목 해소 기여 실적 수치 미흡",
-        "API 구조 정의나 시스템 흐름에 대한 기술적 이해도 언급 부재"
-      ],
-      "improvements": [
-        {
-          "title": "프로덕트 지표 개선 수치화",
-          "original": "서비스의 결제 이탈률을 낮추기 위해 기획을 변경했습니다.",
-          "suggested": "사용자 행동 추적(Amplitude) 데이터 기반 퍼널 분석을 통해 3단계 결제 플로우를 간소화하여 결제 과정 이탈률을 18%에서 6.5%로 대폭 개선했습니다."
-        }
-      ],
-      "interviewQuestions": [
-        {
-          "question": "한정된 자원 속에서 개발팀과 디자이너의 일정이 대립하는 상황이 발생할 때, 기획자로서 최종 요구사항 스펙과 우선순위를 어떤 기준으로 합의합니까?",
-          "tip": "MoSCoW 우선순위 기법을 언급하고 사용자 가치 및 비즈니스 임팩트를 측정할 수 있는 데이터 수치를 제안하여 협조를 이끌어 낸다고 답하세요."
-        }
-      ]
-    }
-  };
+  showLoader(true);
 
   // Select dataset, default to Frontend if template mismatch
   const result = demoData[role] || demoData["프론트엔드 개발자"];
